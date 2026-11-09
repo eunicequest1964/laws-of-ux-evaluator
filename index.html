@@ -6,149 +6,60 @@
 <title>Laws of UX Evaluator</title>
 <style>
   :root {
-    --bg: #f8f9fa;
-    --card: #ffffff;
-    --text: #1a1a1a;
-    --muted: #5c5c5c;
-    --accent: #2563eb;
-    --accent-hover: #1d4ed8;
-    --success: #16a34a;
-    --warning: #ea580c;
-    --border: #e5e7eb;
-    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --bg: #f8f9fa; --card: #fff; --text: #1a1a1a; --muted: #5c5c5c;
+    --accent: #2563eb; --accent-hover: #1d4ed8; --success: #16a34a;
+    --warning: #ea580c; --border: #e5e7eb;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
   }
   * { box-sizing: border-box; }
-  body {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.5;
-    margin: 0;
-    padding: 1.5rem;
-  }
+  body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; margin: 0; padding: 1.5rem; }
   .container { max-width: 900px; margin: 0 auto; }
   header { text-align: center; margin-bottom: 2rem; }
-  h1 { font-size: 1.75rem; margin: 0 0 0.5rem; }
+  h1 { font-size: 1.75rem; margin: 0 0 .5rem; }
   .subtitle { color: var(--muted); margin: 0; }
-  .card {
-    background: var(--card);
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-    padding: 1.5rem;
-    margin-bottom: 1.25rem;
-    border: 1px solid var(--border);
+  .card { background: var(--card); border-radius: 12px; box-shadow: var(--shadow); padding: 1.5rem; margin-bottom: 1.25rem; border: 1px solid var(--border); }
+  .input-row { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .75rem; }
+  input[type="url"], input[type="text"], input[type="password"] {
+    flex: 1; min-width: 200px; padding: .75rem 1rem; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; font-family: inherit;
   }
-  .input-row {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-  input[type="url"], input[type="text"] {
-    flex: 1;
-    min-width: 200px;
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: 1rem;
-    font-family: inherit;
-  }
-  button {
-    background: var(--accent);
-    color: white;
-    border: none;
-    padding: 0.75rem 1.25rem;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-    white-space: nowrap;
-  }
+  button { background: var(--accent); color: #fff; border: none; padding: .75rem 1.25rem; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background .2s; white-space: nowrap; }
   button:hover { background: var(--accent-hover); }
-  button:disabled { opacity: 0.5; cursor: not-allowed; }
-  .secondary { background: #6b7280; }
-  .secondary:hover { background: #4b5563; }
-  .preview-wrap {
-    margin-top: 1rem;
-    text-align: center;
-  }
-  .preview {
-    max-width: 100%;
-    max-height: 500px;
-    border-radius: 8px;
-    box-shadow: var(--shadow);
-    display: none;
-  }
-  .status { color: var(--muted); font-size: 0.9rem; margin-top: 0.5rem; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .secondary { background: #6b7280; } .secondary:hover { background: #4b5563; }
+  .preview-wrap { margin-top: 1rem; text-align: center; }
+  .preview { max-width: 100%; max-height: 500px; border-radius: 8px; box-shadow: var(--shadow); display: none; }
+  .status { color: var(--muted); font-size: .9rem; margin-top: .5rem; }
   .error { color: var(--warning); }
-  .law {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border);
-  }
-  .law:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-  .law h3 { margin: 0 0 0.25rem; font-size: 1.1rem; }
-  .law-desc { color: var(--muted); font-size: 0.9rem; margin: 0 0 0.75rem; }
-  .questions { display: flex; flex-direction: column; gap: 0.5rem; }
-  label.q {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.6rem;
-    font-size: 0.95rem;
-    cursor: pointer;
-  }
-  label.q input { margin-top: 0.2rem; }
-  .notes {
-    width: 100%;
-    margin-top: 0.5rem;
-    padding: 0.5rem;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-family: inherit;
-    font-size: 0.9rem;
-    resize: vertical;
-    min-height: 2.5rem;
-  }
+  .key-note { font-size: .85rem; color: var(--muted); margin-top: .25rem; }
   #report { display: none; }
-  .score-big {
-    font-size: 3rem;
-    font-weight: 700;
-    text-align: center;
-    margin: 0.5rem 0;
-  }
+  .score-big { font-size: 3rem; font-weight: 700; text-align: center; margin: .5rem 0; }
   .score-label { text-align: center; color: var(--muted); margin-bottom: 1rem; }
-  .good { color: var(--success); }
-  .mid { color: #d97706; }
-  .poor { color: var(--warning); }
-  .section { margin-top: 1.25rem; }
-  .section h4 { margin: 0 0 0.5rem; }
-  ul { margin: 0.25rem 0 0; padding-left: 1.25rem; }
-  li { margin-bottom: 0.25rem; }
-  .footer { text-align: center; color: var(--muted); font-size: 0.85rem; margin-top: 2rem; }
-  .actions { display: flex; gap: 0.75rem; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap; }
-  .tabs {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-  }
-  .tab {
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    background: #e5e7eb;
-    cursor: pointer;
-    font-size: 0.9rem;
-  }
-  .tab.active { background: var(--accent); color: white; }
+  .good { color: var(--success); } .mid { color: #d97706; } .poor { color: var(--warning); }
+  .section { margin-top: 1.25rem; } .section h4 { margin: 0 0 .5rem; }
+  ul { margin: .25rem 0 0; padding-left: 1.25rem; } li { margin-bottom: .35rem; }
+  .law-result { margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+  .law-result:last-child { border-bottom: none; }
+  .law-score { font-weight: 600; }
+  .footer { text-align: center; color: var(--muted); font-size: .85rem; margin-top: 2rem; }
+  .actions { display: flex; gap: .75rem; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap; }
+  .tabs { display: flex; gap: .5rem; margin-bottom: 1rem; }
+  .tab { padding: .5rem 1rem; border-radius: 6px; background: #e5e7eb; cursor: pointer; font-size: .9rem; }
+  .tab.active { background: var(--accent); color: #fff; }
 </style>
 </head>
 <body>
 <div class="container">
   <header>
     <h1>Laws of UX Evaluator</h1>
-    <p class="subtitle">Paste a URL or upload a screenshot and score it against core UX psychology principles</p>
+    <p class="subtitle">Paste a URL — automatic judgment against core UX principles via vision model</p>
   </header>
 
   <div class="card">
+    <div class="input-row">
+      <input type="password" id="apiKey" placeholder="Gemini API key (free from aistudio.google.com)" autocomplete="off">
+    </div>
+    <p class="key-note">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>. Stored only in your browser for this session.</p>
+
     <div class="tabs">
       <div class="tab active" data-mode="url">URL</div>
       <div class="tab" data-mode="upload">Upload screenshot</div>
@@ -156,10 +67,9 @@
 
     <div id="urlMode">
       <div class="input-row">
-        <input type="url" id="urlInput" placeholder="https://example.com" required>
-        <button type="button" id="fetchBtn">Load page</button>
+        <input type="url" id="urlInput" placeholder="https://example.com">
+        <button type="button" id="fetchBtn">Evaluate page</button>
       </div>
-      <div class="status" id="status"></div>
     </div>
 
     <div id="uploadMode" style="display:none;">
@@ -169,139 +79,42 @@
       </div>
     </div>
 
-    <div class="preview-wrap">
-      <img id="preview" class="preview" alt="Design preview">
-    </div>
+    <div class="status" id="status"></div>
+    <div class="preview-wrap"><img id="preview" class="preview" alt="Design preview"></div>
   </div>
-
-  <form id="evalForm" style="display:none;">
-    <div class="card" id="lawsContainer"></div>
-    <div style="text-align:center;margin:1.5rem 0;">
-      <button type="submit" id="generateBtn">Generate Evaluation Report</button>
-    </div>
-  </form>
 
   <div class="card" id="report"></div>
 
-  <p class="footer">Based on Jon Yablonski’s Laws of UX. Principles are heuristics, not absolute rules.<br>
-  Screenshots via microlink.io (free tier).</p>
+  <p class="footer">Based on Jon Yablonski’s Laws of UX. Automated judgment via Gemini vision. Principles are heuristics, not absolute rules.</p>
 </div>
 
 <script>
 const LAWS = [
-  {
-    id: "jakob",
-    name: "Jakob’s Law",
-    desc: "Users prefer your site to work the same way as other sites they already know.",
-    questions: [
-      "Navigation and core patterns match common conventions (e.g. logo top-left, search, hamburger on mobile)",
-      "Terminology and icons are familiar rather than novel or clever",
-      "Users can accomplish primary tasks without learning a new mental model"
-    ]
-  },
-  {
-    id: "hick",
-    name: "Hick’s Law",
-    desc: "Decision time increases with the number and complexity of choices.",
-    questions: [
-      "Primary actions are clear; secondary options are de-emphasized or progressive",
-      "Menus, forms, or lists avoid overwhelming numbers of equal-weight choices",
-      "Defaults or recommended paths are visible where choices exist"
-    ]
-  },
-  {
-    id: "fitts",
-    name: "Fitts’s Law",
-    desc: "Time to acquire a target is a function of the distance to and size of the target.",
-    questions: [
-      "Primary buttons and interactive targets are large enough and easy to hit",
-      "Important controls are positioned where users naturally look or reach",
-      "Touch targets (on mobile) meet minimum size guidelines (~44px)"
-    ]
-  },
-  {
-    id: "miller",
-    name: "Miller’s Law & Chunking",
-    desc: "Working memory holds roughly 7 ± 2 items. Chunking improves recall.",
-    questions: [
-      "Information is grouped into meaningful chunks rather than long unbroken lists",
-      "Forms, navigation, or options are broken into digestible steps or sections",
-      "No single screen forces users to hold too many items in memory at once"
-    ]
-  },
-  {
-    id: "aesthetic",
-    name: "Aesthetic-Usability Effect",
-    desc: "Users often perceive aesthetically pleasing design as more usable.",
-    questions: [
-      "Visual hierarchy is clear (size, weight, color, spacing guide the eye)",
-      "Spacing, alignment, and consistency feel polished and intentional",
-      "The design looks trustworthy and professional for its context"
-    ]
-  },
-  {
-    id: "von",
-    name: "Von Restorff Effect",
-    desc: "The item that differs from the rest is most likely to be remembered.",
-    questions: [
-      "Primary call-to-action stands out clearly from surrounding elements",
-      "Key information or status uses intentional contrast (not random color noise)",
-      "Important elements are not competing with each other for attention"
-    ]
-  },
-  {
-    id: "load",
-    name: "Cognitive Load",
-    desc: "The amount of mental resources needed to understand and interact with an interface.",
-    questions: [
-      "The screen has a clear purpose; extraneous elements are minimized",
-      "Labels, instructions, and feedback reduce the need for users to figure things out",
-      "Visual clutter, dense text, or competing elements are avoided"
-    ]
-  },
-  {
-    id: "proximity",
-    name: "Law of Proximity & Similarity",
-    desc: "Objects that are near or similar tend to be perceived as grouped.",
-    questions: [
-      "Related items are visually grouped (spacing, borders, or shared styling)",
-      "Unrelated elements are clearly separated",
-      "Consistent visual language is used for similar types of content or actions"
-    ]
-  },
-  {
-    id: "goal",
-    name: "Goal-Gradient Effect",
-    desc: "Motivation increases as people get closer to completing a task.",
-    questions: [
-      "Progress is shown where multi-step flows exist (bars, steps, percentages)",
-      "Users can see how far they’ve come and what’s left",
-      "Completion feels achievable rather than open-ended or endless"
-    ]
-  },
-  {
-    id: "peak",
-    name: "Peak-End Rule",
-    desc: "People judge an experience largely by its peak and its end.",
-    questions: [
-      "Success states, confirmations, or endings feel positive and clear",
-      "Error states are helpful rather than punitive or confusing",
-      "The most emotionally salient moment (peak) is handled intentionally"
-    ]
-  }
+  { id: "jakob", name: "Jakob’s Law", desc: "Users prefer your site to work the same way as other sites they already know." },
+  { id: "hick", name: "Hick’s Law", desc: "Decision time increases with the number and complexity of choices." },
+  { id: "fitts", name: "Fitts’s Law", desc: "Time to acquire a target is a function of the distance to and size of the target." },
+  { id: "miller", name: "Miller’s Law & Chunking", desc: "Working memory holds roughly 7 ± 2 items. Chunking improves recall." },
+  { id: "aesthetic", name: "Aesthetic-Usability Effect", desc: "Users often perceive aesthetically pleasing design as more usable." },
+  { id: "von", name: "Von Restorff Effect", desc: "The item that differs from the rest is most likely to be remembered." },
+  { id: "load", name: "Cognitive Load", desc: "The amount of mental resources needed to understand and interact with an interface." },
+  { id: "proximity", name: "Law of Proximity & Similarity", desc: "Objects that are near or similar tend to be perceived as grouped." },
+  { id: "goal", name: "Goal-Gradient Effect", desc: "Motivation increases as people get closer to completing a task." },
+  { id: "peak", name: "Peak-End Rule", desc: "People judge an experience largely by its peak and its end." }
 ];
 
+const apiKeyInput = document.getElementById("apiKey");
 const urlInput = document.getElementById("urlInput");
 const fetchBtn = document.getElementById("fetchBtn");
 const statusEl = document.getElementById("status");
 const preview = document.getElementById("preview");
-const form = document.getElementById("evalForm");
-const lawsContainer = document.getElementById("lawsContainer");
 const report = document.getElementById("report");
 const uploadArea = document.getElementById("uploadArea");
 const fileInput = document.getElementById("fileInput");
 
-// Tab switching
+// Persist key for the session
+apiKeyInput.value = sessionStorage.getItem("geminiKey") || "";
+apiKeyInput.addEventListener("change", () => sessionStorage.setItem("geminiKey", apiKeyInput.value.trim()));
+
 document.querySelectorAll(".tab").forEach(tab => {
   tab.addEventListener("click", () => {
     document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
@@ -312,161 +125,165 @@ document.querySelectorAll(".tab").forEach(tab => {
   });
 });
 
-// URL mode
 fetchBtn.addEventListener("click", async () => {
   const url = urlInput.value.trim();
-  if (!url) {
-    statusEl.textContent = "Please enter a URL.";
-    statusEl.className = "status error";
-    return;
-  }
-  try { new URL(url); } catch {
-    statusEl.textContent = "Invalid URL. Include https://";
-    statusEl.className = "status error";
-    return;
-  }
+  const key = apiKeyInput.value.trim();
+  if (!key) { setStatus("Add a Gemini API key first.", true); return; }
+  if (!url) { setStatus("Enter a URL.", true); return; }
+  try { new URL(url); } catch { setStatus("Invalid URL.", true); return; }
 
   fetchBtn.disabled = true;
-  statusEl.textContent = "Fetching screenshot…";
-  statusEl.className = "status";
-
-  // Use microlink free screenshot endpoint
-  const api = `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`;
+  setStatus("Capturing screenshot…");
   try {
+    const api = `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`;
     const res = await fetch(api);
     const data = await res.json();
-    if (data.status === "success" && data.data?.screenshot?.url) {
-      preview.src = data.data.screenshot.url;
-      preview.style.display = "block";
-      statusEl.textContent = "Loaded. Review the screenshot below, then evaluate.";
-      statusEl.className = "status";
-      buildForm();
-      form.style.display = "block";
-      report.style.display = "none";
-      form.scrollIntoView({ behavior: "smooth", block: "start" });
-    } else {
-      throw new Error(data.message || "Could not capture screenshot");
-    }
+    if (data.status !== "success" || !data.data?.screenshot?.url) throw new Error("Screenshot failed");
+    const imgUrl = data.data.screenshot.url;
+    preview.src = imgUrl;
+    preview.style.display = "block";
+    setStatus("Screenshot ready. Analyzing with vision model…");
+    await analyzeImage(imgUrl, key);
   } catch (err) {
-    statusEl.textContent = "Failed to load screenshot. Try a different URL or upload a screenshot instead. (" + err.message + ")";
-    statusEl.className = "status error";
+    setStatus("Error: " + err.message, true);
   } finally {
     fetchBtn.disabled = false;
   }
 });
 
-// Upload mode
 uploadArea.addEventListener("click", () => fileInput.click());
-uploadArea.addEventListener("dragover", e => { e.preventDefault(); uploadArea.style.borderColor = "var(--accent)"; });
-uploadArea.addEventListener("dragleave", () => uploadArea.style.borderColor = "var(--border)");
-uploadArea.addEventListener("drop", e => {
-  e.preventDefault();
-  uploadArea.style.borderColor = "var(--border)";
-  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
-});
-fileInput.addEventListener("change", () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
-
-function handleFile(file) {
-  if (!file.type.startsWith("image/")) return;
+fileInput.addEventListener("change", async () => {
+  const file = fileInput.files[0];
+  if (!file || !file.type.startsWith("image/")) return;
+  const key = apiKeyInput.value.trim();
+  if (!key) { setStatus("Add a Gemini API key first.", true); return; }
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = async e => {
     preview.src = e.target.result;
     preview.style.display = "block";
-    buildForm();
-    form.style.display = "block";
-    report.style.display = "none";
-    form.scrollIntoView({ behavior: "smooth", block: "start" });
+    setStatus("Analyzing uploaded image…");
+    try {
+      await analyzeImage(e.target.result, key, true);
+    } catch (err) {
+      setStatus("Error: " + err.message, true);
+    }
   };
   reader.readAsDataURL(file);
-}
-
-function buildForm() {
-  lawsContainer.innerHTML = LAWS.map(law => `
-    <div class="law" data-law="${law.id}">
-      <h3>${law.name}</h3>
-      <p class="law-desc">${law.desc}</p>
-      <div class="questions">
-        ${law.questions.map((q, i) => `
-          <label class="q">
-            <input type="checkbox" name="${law.id}" value="${i}">
-            <span>${q}</span>
-          </label>
-        `).join("")}
-      </div>
-      <textarea class="notes" placeholder="Optional notes for this principle..." data-notes="${law.id}"></textarea>
-    </div>
-  `).join("");
-}
-
-form.addEventListener("submit", e => {
-  e.preventDefault();
-  generateReport();
 });
 
-function generateReport() {
-  const results = LAWS.map(law => {
-    const checks = document.querySelectorAll(`input[name="${law.id}"]:checked`).length;
-    const total = law.questions.length;
-    const score = checks / total;
-    const notes = document.querySelector(`textarea[data-notes="${law.id}"]`).value.trim();
-    return { ...law, checks, total, score, notes };
+async function analyzeImage(imageSource, apiKey, isDataUrl = false) {
+  let base64, mime;
+  if (isDataUrl) {
+    const parts = imageSource.split(",");
+    mime = parts[0].match(/:(.*?);/)[1];
+    base64 = parts[1];
+  } else {
+    // Fetch remote screenshot and convert to base64
+    const imgRes = await fetch(imageSource);
+    const blob = await imgRes.blob();
+    mime = blob.type || "image/png";
+    base64 = await blobToBase64(blob);
+  }
+
+  const prompt = `You are a UX expert evaluating a user interface screenshot against Jon Yablonski's Laws of UX.
+
+For each of the following principles, give:
+- score: integer 0-100 (how well the design follows the principle)
+- evidence: 1-2 sentence observation from the image
+- suggestion: concrete improvement if score < 70, otherwise "Strong"
+
+Principles:
+${LAWS.map(l => `- ${l.name}: ${l.desc}`).join("\n")}
+
+Also give an overall_score (0-100) and a short summary (2-3 sentences).
+
+Respond ONLY with valid JSON in this exact shape:
+{
+  "overall_score": 72,
+  "summary": "...",
+  "laws": [
+    { "name": "Jakob’s Law", "score": 80, "evidence": "...", "suggestion": "..." },
+    ...
+  ]
+}`;
+
+  const body = {
+    contents: [{
+      parts: [
+        { text: prompt },
+        { inline_data: { mime_type: mime, data: base64 } }
+      ]
+    }],
+    generationConfig: { temperature: 0.2, responseMimeType: "application/json" }
+  };
+
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
   });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error("Gemini API error: " + err.slice(0, 200));
+  }
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error("No response from model");
+  const result = JSON.parse(text);
+  renderReport(result);
+  setStatus("Analysis complete.");
+}
 
-  const overall = results.reduce((sum, r) => sum + r.score, 0) / results.length;
-  const pct = Math.round(overall * 100);
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result.split(",")[1]);
+    r.onerror = reject;
+    r.readAsDataURL(blob);
+  });
+}
 
-  let scoreClass = "poor";
-  let scoreLabel = "Needs significant work";
+function renderReport(result) {
+  const pct = result.overall_score || 0;
+  let scoreClass = "poor", scoreLabel = "Needs significant work";
   if (pct >= 80) { scoreClass = "good"; scoreLabel = "Strong alignment"; }
   else if (pct >= 60) { scoreClass = "mid"; scoreLabel = "Solid with room to improve"; }
 
-  const strengths = results.filter(r => r.score >= 0.67);
-  const weaknesses = results.filter(r => r.score < 0.5);
-
   let html = `
-    <h2 style="text-align:center;margin-top:0;">Evaluation Report</h2>
+    <h2 style="text-align:center;margin-top:0;">Automated Evaluation</h2>
     <div class="score-big ${scoreClass}">${pct}%</div>
     <div class="score-label">${scoreLabel} with the Laws of UX</div>
-    <p style="text-align:center;color:var(--muted);">Checked ${results.reduce((s,r)=>s+r.checks,0)} of ${results.reduce((s,r)=>s+r.total,0)} criteria across ${LAWS.length} principles.</p>
+    <p style="text-align:center;color:var(--muted);">${result.summary || ""}</p>
   `;
 
-  if (strengths.length) {
-    html += `<div class="section"><h4>Strengths</h4><ul>`;
-    strengths.forEach(r => html += `<li><strong>${r.name}</strong> (${r.checks}/${r.total})</li>`);
-    html += `</ul></div>`;
-  }
-
-  if (weaknesses.length) {
-    html += `<div class="section"><h4>Areas to improve</h4><ul>`;
-    weaknesses.forEach(r => html += `<li><strong>${r.name}</strong> — ${r.desc}</li>`);
-    html += `</ul></div>`;
-  }
-
-  const notesExist = results.filter(r => r.notes);
-  if (notesExist.length) {
-    html += `<div class="section"><h4>Your notes</h4>`;
-    notesExist.forEach(r => html += `<p><strong>${r.name}:</strong> ${r.notes}</p>`);
+  if (result.laws && result.laws.length) {
+    html += `<div class="section"><h4>Per-principle judgment</h4>`;
+    result.laws.forEach(l => {
+      html += `
+        <div class="law-result">
+          <div><strong>${l.name}</strong> <span class="law-score">${l.score}/100</span></div>
+          <div style="font-size:.9rem;color:var(--muted);margin:.25rem 0;">${l.evidence || ""}</div>
+          ${l.suggestion && l.suggestion !== "Strong" ? `<div style="font-size:.9rem;"><em>Suggestion:</em> ${l.suggestion}</div>` : ""}
+        </div>`;
+    });
     html += `</div>`;
   }
 
   html += `
-    <div class="section">
-      <h4>Quick recommendations</h4>
-      <ul>
-        <li>Prioritize the lowest-scoring laws first — they usually have the highest user impact.</li>
-        <li>Re-test with a short usability session after changes.</li>
-        <li>For AI-generated screens, explicitly prompt against the weak principles (e.g. “reduce choices per Hick’s Law”).</li>
-      </ul>
-    </div>
     <div class="actions">
       <button type="button" onclick="window.print()">Print / Save as PDF</button>
       <button type="button" class="secondary" onclick="location.reload()">Evaluate another</button>
     </div>
   `;
-
   report.innerHTML = html;
   report.style.display = "block";
   report.scrollIntoView({ behavior: "smooth" });
+}
+
+function setStatus(msg, isError = false) {
+  statusEl.textContent = msg;
+  statusEl.className = "status" + (isError ? " error" : "");
 }
 </script>
 </body>
