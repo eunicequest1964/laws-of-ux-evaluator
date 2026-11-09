@@ -50,14 +50,14 @@
 <div class="container">
   <header>
     <h1>Laws of UX Evaluator</h1>
-    <p class="subtitle">Paste a URL — automatic judgment via Grok vision</p>
+    <p class="subtitle">Paste a URL — automatic judgment via Jev (TypeSafe System One model)</p>
   </header>
 
   <div class="card">
     <div class="input-row">
-      <input type="password" id="apiKey" placeholder="xAI API key (from console.x.ai)" autocomplete="off">
+      <input type="password" id="apiKey" placeholder="TypeSafe / Jev API key" autocomplete="off">
     </div>
-    <p class="key-note">Get a key at <a href="https://console.x.ai" target="_blank">console.x.ai</a>. Stored only in your browser for this session.</p>
+    <p class="key-note">Get a key at <a href="https://console.typesafe.ai" target="_blank">console.typesafe.ai</a> (or your gateway). Stored only in this browser session.</p>
 
     <div class="tabs">
       <div class="tab active" data-mode="url">URL</div>
@@ -84,7 +84,7 @@
 
   <div class="card" id="report"></div>
 
-  <p class="footer">Based on Jon Yablonski’s Laws of UX. Automated judgment via Grok. Principles are heuristics, not absolute rules.</p>
+  <p class="footer">Based on Jon Yablonski’s Laws of UX. Scoring via Jev (experimental image path). Principles are heuristics.</p>
 </div>
 
 <script>
@@ -110,8 +110,8 @@ const report = document.getElementById("report");
 const uploadArea = document.getElementById("uploadArea");
 const fileInput = document.getElementById("fileInput");
 
-apiKeyInput.value = sessionStorage.getItem("xaiKey") || "";
-apiKeyInput.addEventListener("change", () => sessionStorage.setItem("xaiKey", apiKeyInput.value.trim()));
+apiKeyInput.value = sessionStorage.getItem("jevKey") || "";
+apiKeyInput.addEventListener("change", () => sessionStorage.setItem("jevKey", apiKeyInput.value.trim()));
 
 document.querySelectorAll(".tab").forEach(tab => {
   tab.addEventListener("click", () => {
@@ -126,7 +126,7 @@ document.querySelectorAll(".tab").forEach(tab => {
 fetchBtn.addEventListener("click", async () => {
   const url = urlInput.value.trim();
   const key = apiKeyInput.value.trim();
-  if (!key) { setStatus("Add an xAI API key first.", true); return; }
+  if (!key) { setStatus("Add a Jev / TypeSafe API key first.", true); return; }
   if (!url) { setStatus("Enter a URL.", true); return; }
   try { new URL(url); } catch { setStatus("Invalid URL.", true); return; }
 
@@ -140,8 +140,8 @@ fetchBtn.addEventListener("click", async () => {
     const imgUrl = data.data.screenshot.url;
     preview.src = imgUrl;
     preview.style.display = "block";
-    setStatus("Screenshot ready. Analyzing with Grok…");
-    await analyzeImage(imgUrl, key);
+    setStatus("Screenshot ready. Scoring with Jev…");
+    await analyzeWithJev(imgUrl, key);
   } catch (err) {
     setStatus("Error: " + err.message, true);
   } finally {
@@ -154,14 +154,14 @@ fileInput.addEventListener("change", async () => {
   const file = fileInput.files[0];
   if (!file || !file.type.startsWith("image/")) return;
   const key = apiKeyInput.value.trim();
-  if (!key) { setStatus("Add an xAI API key first.", true); return; }
+  if (!key) { setStatus("Add a Jev / TypeSafe API key first.", true); return; }
   const reader = new FileReader();
   reader.onload = async e => {
     preview.src = e.target.result;
     preview.style.display = "block";
-    setStatus("Analyzing uploaded image with Grok…");
+    setStatus("Scoring uploaded image with Jev…");
     try {
-      await analyzeImage(e.target.result, key, true);
+      await analyzeWithJev(e.target.result, key, true);
     } catch (err) {
       setStatus("Error: " + err.message, true);
     }
@@ -169,95 +169,102 @@ fileInput.addEventListener("change", async () => {
   reader.readAsDataURL(file);
 });
 
-async function analyzeImage(imageSource, apiKey, isDataUrl = false) {
-  let imageUrlForApi;
+async function analyzeWithJev(imageSource, apiKey, isDataUrl = false) {
+  let base64, format = "png";
   if (isDataUrl) {
-    imageUrlForApi = imageSource; // data: URL works in some clients; for xAI we convert or use as-is if supported
+    const parts = imageSource.split(",");
+    const mime = parts[0].match(/:(.*?);/)[1];
+    format = mime.includes("jpeg") || mime.includes("jpg") ? "jpg" : "png";
+    base64 = parts[1];
   } else {
-    imageUrlForApi = imageSource;
+    const imgRes = await fetch(imageSource);
+    const blob = await imgRes.blob();
+    format = (blob.type || "").includes("jpeg") ? "jpg" : "png";
+    base64 = await blobToBase64(blob);
   }
 
-  const prompt = `You are a UX expert evaluating a user interface screenshot against Jon Yablonski's Laws of UX.
+  const assetId = "screenshot";
+  const questions = {};
+  LAWS.forEach(law => {
+    questions[law.id] = {
+      type: "score",
+      instructions: `How well does the design in the image follow ${law.name}? ${law.desc} Score 0 (poor) to 10 (excellent).`,
+      criteria: ["0","1","2","3","4","5","6","7","8","9","10"]
+    };
+  });
 
-For each principle below, return:
-- score: integer 0-100
-- evidence: 1-2 sentence observation from the image
-- suggestion: concrete improvement if score < 70, otherwise "Strong"
-
-Principles:
-${LAWS.map(l => `- ${l.name}: ${l.desc}`).join("\n")}
-
-Also return overall_score (0-100) and a short summary (2-3 sentences).
-
-Respond ONLY with valid JSON in this exact shape:
-{
-  "overall_score": 72,
-  "summary": "...",
-  "laws": [
-    { "name": "Jakob’s Law", "score": 80, "evidence": "...", "suggestion": "..." }
-  ]
-}`;
-
-  // xAI chat completions with image
   const body = {
-    model: "grok-2-vision-1212",
-    messages: [{
-      role: "user",
-      content: [
-        { type: "text", text: prompt },
-        { type: "image_url", image_url: { url: imageUrlForApi } }
-      ]
-    }],
-    temperature: 0.2,
-    response_format: { type: "json_object" }
+    model: "jev-1.14.0",
+    state: { image: assetId, note: "Evaluate this UI screenshot against UX principles." },
+    assets: {
+      [assetId]: {
+        type: "image",
+        format: format,
+        data_base64: base64
+      }
+    },
+    questions: questions
   };
 
-  const res = await fetch("https://api.x.ai/v1/chat/completions", {
+  const res = await fetch("https://api.typesafe.ai/v1/systemone", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`
+      "Authorization": `Bearer ${apiKey}`,
+      "TypeSafe-Danger-Zone-Images": "true"
     },
     body: JSON.stringify(body)
   });
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error("xAI API error: " + err.slice(0, 300));
+    throw new Error("Jev API error: " + err.slice(0, 400));
   }
   const data = await res.json();
-  const text = data.choices?.[0]?.message?.content;
-  if (!text) throw new Error("No response from Grok");
-  const result = JSON.parse(text);
-  renderReport(result);
+  renderReport(data);
   setStatus("Analysis complete.");
 }
 
-function renderReport(result) {
-  const pct = result.overall_score || 0;
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result.split(",")[1]);
+    r.onerror = reject;
+    r.readAsDataURL(blob);
+  });
+}
+
+function renderReport(data) {
+  const answers = data.answers || {};
+  const scores = LAWS.map(law => {
+    const a = answers[law.id];
+    const raw = a?.score != null ? Number(a.score) : 0;
+    const score = Math.round(raw * 10); // 0-10 → 0-100
+    return { ...law, score, confidence: a?.confidence, raw };
+  });
+
+  const overall = scores.length ? Math.round(scores.reduce((s, r) => s + r.score, 0) / scores.length) : 0;
   let scoreClass = "poor", scoreLabel = "Needs significant work";
-  if (pct >= 80) { scoreClass = "good"; scoreLabel = "Strong alignment"; }
-  else if (pct >= 60) { scoreClass = "mid"; scoreLabel = "Solid with room to improve"; }
+  if (overall >= 80) { scoreClass = "good"; scoreLabel = "Strong alignment"; }
+  else if (overall >= 60) { scoreClass = "mid"; scoreLabel = "Solid with room to improve"; }
 
   let html = `
-    <h2 style="text-align:center;margin-top:0;">Automated Evaluation (Grok)</h2>
-    <div class="score-big ${scoreClass}">${pct}%</div>
+    <h2 style="text-align:center;margin-top:0;">Automated Evaluation (Jev)</h2>
+    <div class="score-big ${scoreClass}">${overall}%</div>
     <div class="score-label">${scoreLabel} with the Laws of UX</div>
-    <p style="text-align:center;color:var(--muted);">${result.summary || ""}</p>
+    <p style="text-align:center;color:var(--muted);">Scores from Jev 1.14 image path (experimental). Model: ${data.model || "jev"}.</p>
   `;
 
-  if (result.laws && result.laws.length) {
-    html += `<div class="section"><h4>Per-principle judgment</h4>`;
-    result.laws.forEach(l => {
-      html += `
-        <div class="law-result">
-          <div><strong>${l.name}</strong> <span class="law-score">${l.score}/100</span></div>
-          <div style="font-size:.9rem;color:var(--muted);margin:.25rem 0;">${l.evidence || ""}</div>
-          ${l.suggestion && l.suggestion !== "Strong" ? `<div style="font-size:.9rem;"><em>Suggestion:</em> ${l.suggestion}</div>` : ""}
-        </div>`;
-    });
-    html += `</div>`;
-  }
+  html += `<div class="section"><h4>Per-principle judgment</h4>`;
+  scores.forEach(l => {
+    html += `
+      <div class="law-result">
+        <div><strong>${l.name}</strong> <span class="law-score">${l.score}/100</span></div>
+        <div style="font-size:.9rem;color:var(--muted);margin:.25rem 0;">${l.desc}</div>
+        ${l.confidence != null ? `<div style="font-size:.85rem;">Confidence: ${Math.round(l.confidence * 100)}%</div>` : ""}
+      </div>`;
+  });
+  html += `</div>`;
 
   html += `
     <div class="actions">
