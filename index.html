@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laws of UX Evaluator</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --text: #1a1a1a;
+    --muted: #5c5c5c;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --success: #16a34a;
+    --warning: #ea580c;
+    --border: #e5e7eb;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    margin: 0;
+    padding: 1.5rem;
+  }
+  .container { max-width: 900px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 2rem; }
+  h1 { font-size: 1.75rem; margin: 0 0 0.5rem; }
+  .subtitle { color: var(--muted); margin: 0; }
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+    border: 1px solid var(--border);
+  }
+  .upload-area {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .upload-area:hover, .upload-area.dragover { border-color: var(--accent); background: #eff6ff; }
+  .upload-area input { display: none; }
+  .preview {
+    max-width: 100%;
+    max-height: 400px;
+    border-radius: 8px;
+    margin-top: 1rem;
+    display: none;
+    box-shadow: var(--shadow);
+  }
+  .law {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .law:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .law h3 { margin: 0 0 0.25rem; font-size: 1.1rem; }
+  .law-desc { color: var(--muted); font-size: 0.9rem; margin: 0 0 0.75rem; }
+  .questions { display: flex; flex-direction: column; gap: 0.5rem; }
+  label.q {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+  label.q input { margin-top: 0.2rem; }
+  .notes {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    resize: vertical;
+    min-height: 2.5rem;
+  }
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  button:hover { background: var(--accent-hover); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  #report { display: none; }
+  .score-big {
+    font-size: 3rem;
+    font-weight: 700;
+    text-align: center;
+    margin: 0.5rem 0;
+  }
+  .score-label { text-align: center; color: var(--muted); margin-bottom: 1rem; }
+  .good { color: var(--success); }
+  .mid { color: #d97706; }
+  .poor { color: var(--warning); }
+  .section { margin-top: 1.25rem; }
+  .section h4 { margin: 0 0 0.5rem; }
+  ul { margin: 0.25rem 0 0; padding-left: 1.25rem; }
+  li { margin-bottom: 0.25rem; }
+  .footer { text-align: center; color: var(--muted); font-size: 0.85rem; margin-top: 2rem; }
+  .actions { display: flex; gap: 0.75rem; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Laws of UX Evaluator</h1>
+    <p class="subtitle">Upload a design screenshot and score it against core UX psychology principles</p>
+  </header>
+
+  <div class="card">
+    <div class="upload-area" id="uploadArea">
+      <p><strong>Drop a screenshot</strong> or click to upload</p>
+      <p style="color:var(--muted);font-size:0.9rem;margin:0.25rem 0 0;">PNG, JPG, or WebP of a webpage, app screen, or mockup</p>
+      <input type="file" id="fileInput" accept="image/*">
+    </div>
+    <img id="preview" class="preview" alt="Design preview">
+  </div>
+
+  <form id="evalForm" style="display:none;">
+    <div class="card" id="lawsContainer"></div>
+    <div style="text-align:center;margin:1.5rem 0;">
+      <button type="submit" id="generateBtn">Generate Evaluation Report</button>
+    </div>
+  </form>
+
+  <div class="card" id="report"></div>
+
+  <p class="footer">Based on Jon Yablonski’s Laws of UX. Principles are heuristics, not absolute rules.</p>
+</div>
+
+<script>
+const LAWS = [
+  {
+    id: "jakob",
+    name: "Jakob’s Law",
+    desc: "Users prefer your site to work the same way as other sites they already know.",
+    questions: [
+      "Navigation and core patterns match common conventions (e.g. logo top-left, search, hamburger on mobile)",
+      "Terminology and icons are familiar rather than novel or clever",
+      "Users can accomplish primary tasks without learning a new mental model"
+    ]
+  },
+  {
+    id: "hick",
+    name: "Hick’s Law",
+    desc: "Decision time increases with the number and complexity of choices.",
+    questions: [
+      "Primary actions are clear; secondary options are de-emphasized or progressive",
+      "Menus, forms, or lists avoid overwhelming numbers of equal-weight choices",
+      "Defaults or recommended paths are visible where choices exist"
+    ]
+  },
+  {
+    id: "fitts",
+    name: "Fitts’s Law",
+    desc: "Time to acquire a target is a function of the distance to and size of the target.",
+    questions: [
+      "Primary buttons and interactive targets are large enough and easy to hit",
+      "Important controls are positioned where users naturally look or reach",
+      "Touch targets (on mobile) meet minimum size guidelines (~44px)"
+    ]
+  },
+  {
+    id: "miller",
+    name: "Miller’s Law & Chunking",
+    desc: "Working memory holds roughly 7 ± 2 items. Chunking improves recall.",
+    questions: [
+      "Information is grouped into meaningful chunks rather than long unbroken lists",
+      "Forms, navigation, or options are broken into digestible steps or sections",
+      "No single screen forces users to hold too many items in memory at once"
+    ]
+  },
+  {
+    id: "aesthetic",
+    name: "Aesthetic-Usability Effect",
+    desc: "Users often perceive aesthetically pleasing design as more usable.",
+    questions: [
+      "Visual hierarchy is clear (size, weight, color, spacing guide the eye)",
+      "Spacing, alignment, and consistency feel polished and intentional",
+      "The design looks trustworthy and professional for its context"
+    ]
+  },
+  {
+    id: "von",
+    name: "Von Restorff Effect",
+    desc: "The item that differs from the rest is most likely to be remembered.",
+    questions: [
+      "Primary call-to-action stands out clearly from surrounding elements",
+      "Key information or status uses intentional contrast (not random color noise)",
+      "Important elements are not competing with each other for attention"
+    ]
+  },
+  {
+    id: "load",
+    name: "Cognitive Load",
+    desc: "The amount of mental resources needed to understand and interact with an interface.",
+    questions: [
+      "The screen has a clear purpose; extraneous elements are minimized",
+      "Labels, instructions, and feedback reduce the need for users to figure things out",
+      "Visual clutter, dense text, or competing elements are avoided"
+    ]
+  },
+  {
+    id: "proximity",
+    name: "Law of Proximity & Similarity",
+    desc: "Objects that are near or similar tend to be perceived as grouped.",
+    questions: [
+      "Related items are visually grouped (spacing, borders, or shared styling)",
+      "Unrelated elements are clearly separated",
+      "Consistent visual language is used for similar types of content or actions"
+    ]
+  },
+  {
+    id: "goal",
+    name: "Goal-Gradient Effect",
+    desc: "Motivation increases as people get closer to completing a task.",
+    questions: [
+      "Progress is shown where multi-step flows exist (bars, steps, percentages)",
+      "Users can see how far they’ve come and what’s left",
+      "Completion feels achievable rather than open-ended or endless"
+    ]
+  },
+  {
+    id: "peak",
+    name: "Peak-End Rule",
+    desc: "People judge an experience largely by its peak and its end.",
+    questions: [
+      "Success states, confirmations, or endings feel positive and clear",
+      "Error states are helpful rather than punitive or confusing",
+      "The most emotionally salient moment (peak) is handled intentionally"
+    ]
+  }
+];
+
+const uploadArea = document.getElementById("uploadArea");
+const fileInput = document.getElementById("fileInput");
+const preview = document.getElementById("preview");
+const form = document.getElementById("evalForm");
+const lawsContainer = document.getElementById("lawsContainer");
+const report = document.getElementById("report");
+
+uploadArea.addEventListener("click", () => fileInput.click());
+uploadArea.addEventListener("dragover", e => { e.preventDefault(); uploadArea.classList.add("dragover"); });
+uploadArea.addEventListener("dragleave", () => uploadArea.classList.remove("dragover"));
+uploadArea.addEventListener("drop", e => {
+  e.preventDefault();
+  uploadArea.classList.remove("dragover");
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener("change", () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+function handleFile(file) {
+  if (!file.type.startsWith("image/")) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    preview.src = e.target.result;
+    preview.style.display = "block";
+    buildForm();
+    form.style.display = "block";
+    report.style.display = "none";
+    form.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  reader.readAsDataURL(file);
+}
+
+function buildForm() {
+  lawsContainer.innerHTML = LAWS.map(law => `
+    <div class="law" data-law="${law.id}">
+      <h3>${law.name}</h3>
+      <p class="law-desc">${law.desc}</p>
+      <div class="questions">
+        ${law.questions.map((q, i) => `
+          <label class="q">
+            <input type="checkbox" name="${law.id}" value="${i}">
+            <span>${q}</span>
+          </label>
+        `).join("")}
+      </div>
+      <textarea class="notes" placeholder="Optional notes for this principle..." data-notes="${law.id}"></textarea>
+    </div>
+  `).join("");
+}
+
+form.addEventListener("submit", e => {
+  e.preventDefault();
+  generateReport();
+});
+
+function generateReport() {
+  const results = LAWS.map(law => {
+    const checks = document.querySelectorAll(`input[name="${law.id}"]:checked`).length;
+    const total = law.questions.length;
+    const score = checks / total;
+    const notes = document.querySelector(`textarea[data-notes="${law.id}"]`).value.trim();
+    return { ...law, checks, total, score, notes };
+  });
+
+  const overall = results.reduce((sum, r) => sum + r.score, 0) / results.length;
+  const pct = Math.round(overall * 100);
+
+  let scoreClass = "poor";
+  let scoreLabel = "Needs significant work";
+  if (pct >= 80) { scoreClass = "good"; scoreLabel = "Strong alignment"; }
+  else if (pct >= 60) { scoreClass = "mid"; scoreLabel = "Solid with room to improve"; }
+
+  const strengths = results.filter(r => r.score >= 0.67);
+  const weaknesses = results.filter(r => r.score < 0.5);
+
+  let html = `
+    <h2 style="text-align:center;margin-top:0;">Evaluation Report</h2>
+    <div class="score-big ${scoreClass}">${pct}%</div>
+    <div class="score-label">${scoreLabel} with the Laws of UX</div>
+    <p style="text-align:center;color:var(--muted);">Checked ${results.reduce((s,r)=>s+r.checks,0)} of ${results.reduce((s,r)=>s+r.total,0)} criteria across ${LAWS.length} principles.</p>
+  `;
+
+  if (strengths.length) {
+    html += `<div class="section"><h4>Strengths</h4><ul>`;
+    strengths.forEach(r => html += `<li><strong>${r.name}</strong> (${r.checks}/${r.total})</li>`);
+    html += `</ul></div>`;
+  }
+
+  if (weaknesses.length) {
+    html += `<div class="section"><h4>Areas to improve</h4><ul>`;
+    weaknesses.forEach(r => html += `<li><strong>${r.name}</strong> — ${r.desc}</li>`);
+    html += `</ul></div>`;
+  }
+
+  const notesExist = results.filter(r => r.notes);
+  if (notesExist.length) {
+    html += `<div class="section"><h4>Your notes</h4>`;
+    notesExist.forEach(r => html += `<p><strong>${r.name}:</strong> ${r.notes}</p>`);
+    html += `</div>`;
+  }
+
+  html += `
+    <div class="section">
+      <h4>Quick recommendations</h4>
+      <ul>
+        <li>Prioritize the lowest-scoring laws first — they usually have the highest user impact.</li>
+        <li>Re-test with a short usability session after changes.</li>
+        <li>For AI-generated screens, explicitly prompt against the weak principles (e.g. “reduce choices per Hick’s Law”).</li>
+      </ul>
+    </div>
+    <div class="actions">
+      <button type="button" onclick="window.print()">Print / Save as PDF</button>
+      <button type="button" onclick="location.reload()">Evaluate another design</button>
+    </div>
+  `;
+
+  report.innerHTML = html;
+  report.style.display = "block";
+  report.scrollIntoView({ behavior: "smooth" });
+}
+</script>
+</body>
+</html>
