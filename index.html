@@ -38,24 +38,49 @@
     margin-bottom: 1.25rem;
     border: 1px solid var(--border);
   }
-  .upload-area {
-    border: 2px dashed var(--border);
-    border-radius: 12px;
-    padding: 2rem;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
+  .input-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
   }
-  .upload-area:hover, .upload-area.dragover { border-color: var(--accent); background: #eff6ff; }
-  .upload-area input { display: none; }
+  input[type="url"], input[type="text"] {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+  }
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  button:hover { background: var(--accent-hover); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .secondary { background: #6b7280; }
+  .secondary:hover { background: #4b5563; }
+  .preview-wrap {
+    margin-top: 1rem;
+    text-align: center;
+  }
   .preview {
     max-width: 100%;
-    max-height: 400px;
+    max-height: 500px;
     border-radius: 8px;
-    margin-top: 1rem;
-    display: none;
     box-shadow: var(--shadow);
+    display: none;
   }
+  .status { color: var(--muted); font-size: 0.9rem; margin-top: 0.5rem; }
+  .error { color: var(--warning); }
   .law {
     margin-bottom: 1.5rem;
     padding-bottom: 1.5rem;
@@ -84,19 +109,6 @@
     resize: vertical;
     min-height: 2.5rem;
   }
-  button {
-    background: var(--accent);
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  button:hover { background: var(--accent-hover); }
-  button:disabled { opacity: 0.5; cursor: not-allowed; }
   #report { display: none; }
   .score-big {
     font-size: 3rem;
@@ -114,22 +126,52 @@
   li { margin-bottom: 0.25rem; }
   .footer { text-align: center; color: var(--muted); font-size: 0.85rem; margin-top: 2rem; }
   .actions { display: flex; gap: 0.75rem; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap; }
+  .tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .tab {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    background: #e5e7eb;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .tab.active { background: var(--accent); color: white; }
 </style>
 </head>
 <body>
 <div class="container">
   <header>
     <h1>Laws of UX Evaluator</h1>
-    <p class="subtitle">Upload a design screenshot and score it against core UX psychology principles</p>
+    <p class="subtitle">Paste a URL or upload a screenshot and score it against core UX psychology principles</p>
   </header>
 
   <div class="card">
-    <div class="upload-area" id="uploadArea">
-      <p><strong>Drop a screenshot</strong> or click to upload</p>
-      <p style="color:var(--muted);font-size:0.9rem;margin:0.25rem 0 0;">PNG, JPG, or WebP of a webpage, app screen, or mockup</p>
-      <input type="file" id="fileInput" accept="image/*">
+    <div class="tabs">
+      <div class="tab active" data-mode="url">URL</div>
+      <div class="tab" data-mode="upload">Upload screenshot</div>
     </div>
-    <img id="preview" class="preview" alt="Design preview">
+
+    <div id="urlMode">
+      <div class="input-row">
+        <input type="url" id="urlInput" placeholder="https://example.com" required>
+        <button type="button" id="fetchBtn">Load page</button>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <div id="uploadMode" style="display:none;">
+      <div class="upload-area" id="uploadArea" style="border:2px dashed var(--border);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;">
+        <p><strong>Drop a screenshot</strong> or click to upload</p>
+        <input type="file" id="fileInput" accept="image/*" style="display:none;">
+      </div>
+    </div>
+
+    <div class="preview-wrap">
+      <img id="preview" class="preview" alt="Design preview">
+    </div>
   </div>
 
   <form id="evalForm" style="display:none;">
@@ -141,7 +183,8 @@
 
   <div class="card" id="report"></div>
 
-  <p class="footer">Based on Jon Yablonski’s Laws of UX. Principles are heuristics, not absolute rules.</p>
+  <p class="footer">Based on Jon Yablonski’s Laws of UX. Principles are heuristics, not absolute rules.<br>
+  Screenshots via microlink.io (free tier).</p>
 </div>
 
 <script>
@@ -248,19 +291,77 @@ const LAWS = [
   }
 ];
 
-const uploadArea = document.getElementById("uploadArea");
-const fileInput = document.getElementById("fileInput");
+const urlInput = document.getElementById("urlInput");
+const fetchBtn = document.getElementById("fetchBtn");
+const statusEl = document.getElementById("status");
 const preview = document.getElementById("preview");
 const form = document.getElementById("evalForm");
 const lawsContainer = document.getElementById("lawsContainer");
 const report = document.getElementById("report");
+const uploadArea = document.getElementById("uploadArea");
+const fileInput = document.getElementById("fileInput");
 
+// Tab switching
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    const mode = tab.dataset.mode;
+    document.getElementById("urlMode").style.display = mode === "url" ? "block" : "none";
+    document.getElementById("uploadMode").style.display = mode === "upload" ? "block" : "none";
+  });
+});
+
+// URL mode
+fetchBtn.addEventListener("click", async () => {
+  const url = urlInput.value.trim();
+  if (!url) {
+    statusEl.textContent = "Please enter a URL.";
+    statusEl.className = "status error";
+    return;
+  }
+  try { new URL(url); } catch {
+    statusEl.textContent = "Invalid URL. Include https://";
+    statusEl.className = "status error";
+    return;
+  }
+
+  fetchBtn.disabled = true;
+  statusEl.textContent = "Fetching screenshot…";
+  statusEl.className = "status";
+
+  // Use microlink free screenshot endpoint
+  const api = `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`;
+  try {
+    const res = await fetch(api);
+    const data = await res.json();
+    if (data.status === "success" && data.data?.screenshot?.url) {
+      preview.src = data.data.screenshot.url;
+      preview.style.display = "block";
+      statusEl.textContent = "Loaded. Review the screenshot below, then evaluate.";
+      statusEl.className = "status";
+      buildForm();
+      form.style.display = "block";
+      report.style.display = "none";
+      form.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      throw new Error(data.message || "Could not capture screenshot");
+    }
+  } catch (err) {
+    statusEl.textContent = "Failed to load screenshot. Try a different URL or upload a screenshot instead. (" + err.message + ")";
+    statusEl.className = "status error";
+  } finally {
+    fetchBtn.disabled = false;
+  }
+});
+
+// Upload mode
 uploadArea.addEventListener("click", () => fileInput.click());
-uploadArea.addEventListener("dragover", e => { e.preventDefault(); uploadArea.classList.add("dragover"); });
-uploadArea.addEventListener("dragleave", () => uploadArea.classList.remove("dragover"));
+uploadArea.addEventListener("dragover", e => { e.preventDefault(); uploadArea.style.borderColor = "var(--accent)"; });
+uploadArea.addEventListener("dragleave", () => uploadArea.style.borderColor = "var(--border)");
 uploadArea.addEventListener("drop", e => {
   e.preventDefault();
-  uploadArea.classList.remove("dragover");
+  uploadArea.style.borderColor = "var(--border)";
   if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
 });
 fileInput.addEventListener("change", () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
@@ -359,7 +460,7 @@ function generateReport() {
     </div>
     <div class="actions">
       <button type="button" onclick="window.print()">Print / Save as PDF</button>
-      <button type="button" onclick="location.reload()">Evaluate another design</button>
+      <button type="button" class="secondary" onclick="location.reload()">Evaluate another</button>
     </div>
   `;
 
