@@ -36,7 +36,6 @@
   .score-label { text-align: center; color: var(--muted); margin-bottom: 1rem; }
   .good { color: var(--success); } .mid { color: #d97706; } .poor { color: var(--warning); }
   .section { margin-top: 1.25rem; } .section h4 { margin: 0 0 .5rem; }
-  ul { margin: .25rem 0 0; padding-left: 1.25rem; } li { margin-bottom: .35rem; }
   .law-result { margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
   .law-result:last-child { border-bottom: none; }
   .law-score { font-weight: 600; }
@@ -51,14 +50,14 @@
 <div class="container">
   <header>
     <h1>Laws of UX Evaluator</h1>
-    <p class="subtitle">Paste a URL — automatic judgment against core UX principles via vision model</p>
+    <p class="subtitle">Paste a URL — automatic judgment via Grok vision</p>
   </header>
 
   <div class="card">
     <div class="input-row">
-      <input type="password" id="apiKey" placeholder="Gemini API key (free from aistudio.google.com)" autocomplete="off">
+      <input type="password" id="apiKey" placeholder="xAI API key (from console.x.ai)" autocomplete="off">
     </div>
-    <p class="key-note">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>. Stored only in your browser for this session.</p>
+    <p class="key-note">Get a key at <a href="https://console.x.ai" target="_blank">console.x.ai</a>. Stored only in your browser for this session.</p>
 
     <div class="tabs">
       <div class="tab active" data-mode="url">URL</div>
@@ -85,7 +84,7 @@
 
   <div class="card" id="report"></div>
 
-  <p class="footer">Based on Jon Yablonski’s Laws of UX. Automated judgment via Gemini vision. Principles are heuristics, not absolute rules.</p>
+  <p class="footer">Based on Jon Yablonski’s Laws of UX. Automated judgment via Grok. Principles are heuristics, not absolute rules.</p>
 </div>
 
 <script>
@@ -111,9 +110,8 @@ const report = document.getElementById("report");
 const uploadArea = document.getElementById("uploadArea");
 const fileInput = document.getElementById("fileInput");
 
-// Persist key for the session
-apiKeyInput.value = sessionStorage.getItem("geminiKey") || "";
-apiKeyInput.addEventListener("change", () => sessionStorage.setItem("geminiKey", apiKeyInput.value.trim()));
+apiKeyInput.value = sessionStorage.getItem("xaiKey") || "";
+apiKeyInput.addEventListener("change", () => sessionStorage.setItem("xaiKey", apiKeyInput.value.trim()));
 
 document.querySelectorAll(".tab").forEach(tab => {
   tab.addEventListener("click", () => {
@@ -128,7 +126,7 @@ document.querySelectorAll(".tab").forEach(tab => {
 fetchBtn.addEventListener("click", async () => {
   const url = urlInput.value.trim();
   const key = apiKeyInput.value.trim();
-  if (!key) { setStatus("Add a Gemini API key first.", true); return; }
+  if (!key) { setStatus("Add an xAI API key first.", true); return; }
   if (!url) { setStatus("Enter a URL.", true); return; }
   try { new URL(url); } catch { setStatus("Invalid URL.", true); return; }
 
@@ -142,7 +140,7 @@ fetchBtn.addEventListener("click", async () => {
     const imgUrl = data.data.screenshot.url;
     preview.src = imgUrl;
     preview.style.display = "block";
-    setStatus("Screenshot ready. Analyzing with vision model…");
+    setStatus("Screenshot ready. Analyzing with Grok…");
     await analyzeImage(imgUrl, key);
   } catch (err) {
     setStatus("Error: " + err.message, true);
@@ -156,12 +154,12 @@ fileInput.addEventListener("change", async () => {
   const file = fileInput.files[0];
   if (!file || !file.type.startsWith("image/")) return;
   const key = apiKeyInput.value.trim();
-  if (!key) { setStatus("Add a Gemini API key first.", true); return; }
+  if (!key) { setStatus("Add an xAI API key first.", true); return; }
   const reader = new FileReader();
   reader.onload = async e => {
     preview.src = e.target.result;
     preview.style.display = "block";
-    setStatus("Analyzing uploaded image…");
+    setStatus("Analyzing uploaded image with Grok…");
     try {
       await analyzeImage(e.target.result, key, true);
     } catch (err) {
@@ -172,76 +170,67 @@ fileInput.addEventListener("change", async () => {
 });
 
 async function analyzeImage(imageSource, apiKey, isDataUrl = false) {
-  let base64, mime;
+  let imageUrlForApi;
   if (isDataUrl) {
-    const parts = imageSource.split(",");
-    mime = parts[0].match(/:(.*?);/)[1];
-    base64 = parts[1];
+    imageUrlForApi = imageSource; // data: URL works in some clients; for xAI we convert or use as-is if supported
   } else {
-    // Fetch remote screenshot and convert to base64
-    const imgRes = await fetch(imageSource);
-    const blob = await imgRes.blob();
-    mime = blob.type || "image/png";
-    base64 = await blobToBase64(blob);
+    imageUrlForApi = imageSource;
   }
 
   const prompt = `You are a UX expert evaluating a user interface screenshot against Jon Yablonski's Laws of UX.
 
-For each of the following principles, give:
-- score: integer 0-100 (how well the design follows the principle)
+For each principle below, return:
+- score: integer 0-100
 - evidence: 1-2 sentence observation from the image
 - suggestion: concrete improvement if score < 70, otherwise "Strong"
 
 Principles:
 ${LAWS.map(l => `- ${l.name}: ${l.desc}`).join("\n")}
 
-Also give an overall_score (0-100) and a short summary (2-3 sentences).
+Also return overall_score (0-100) and a short summary (2-3 sentences).
 
 Respond ONLY with valid JSON in this exact shape:
 {
   "overall_score": 72,
   "summary": "...",
   "laws": [
-    { "name": "Jakob’s Law", "score": 80, "evidence": "...", "suggestion": "..." },
-    ...
+    { "name": "Jakob’s Law", "score": 80, "evidence": "...", "suggestion": "..." }
   ]
 }`;
 
+  // xAI chat completions with image
   const body = {
-    contents: [{
-      parts: [
-        { text: prompt },
-        { inline_data: { mime_type: mime, data: base64 } }
+    model: "grok-2-vision-1212",
+    messages: [{
+      role: "user",
+      content: [
+        { type: "text", text: prompt },
+        { type: "image_url", image_url: { url: imageUrlForApi } }
       ]
     }],
-    generationConfig: { temperature: 0.2, responseMimeType: "application/json" }
+    temperature: 0.2,
+    response_format: { type: "json_object" }
   };
 
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-  const res = await fetch(endpoint, {
+  const res = await fetch("https://api.x.ai/v1/chat/completions", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`
+    },
     body: JSON.stringify(body)
   });
+
   if (!res.ok) {
     const err = await res.text();
-    throw new Error("Gemini API error: " + err.slice(0, 200));
+    throw new Error("xAI API error: " + err.slice(0, 300));
   }
   const data = await res.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error("No response from model");
+  const text = data.choices?.[0]?.message?.content;
+  if (!text) throw new Error("No response from Grok");
   const result = JSON.parse(text);
   renderReport(result);
   setStatus("Analysis complete.");
-}
-
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(r.result.split(",")[1]);
-    r.onerror = reject;
-    r.readAsDataURL(blob);
-  });
 }
 
 function renderReport(result) {
@@ -251,7 +240,7 @@ function renderReport(result) {
   else if (pct >= 60) { scoreClass = "mid"; scoreLabel = "Solid with room to improve"; }
 
   let html = `
-    <h2 style="text-align:center;margin-top:0;">Automated Evaluation</h2>
+    <h2 style="text-align:center;margin-top:0;">Automated Evaluation (Grok)</h2>
     <div class="score-big ${scoreClass}">${pct}%</div>
     <div class="score-label">${scoreLabel} with the Laws of UX</div>
     <p style="text-align:center;color:var(--muted);">${result.summary || ""}</p>
